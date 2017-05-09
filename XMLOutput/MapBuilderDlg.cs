@@ -10,6 +10,8 @@
     using DotSpatial.Data;
     using System.Linq;
     using System.Diagnostics;
+    using System.Globalization;
+    using System.Threading;
     using DotSpatial.Projections;
     using DotSpatial.Topology;
 
@@ -31,6 +33,50 @@
         {
             InitializeComponent();
 
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+        }
+
+        #endregion
+
+
+        #region Enum
+
+        private enum AreaType
+        {
+            Water,
+            Land,
+            Admin
+        }
+
+        #endregion
+
+
+        #region Properties
+
+        private float Factor { get { return float.Parse(txtFactor.Text, CultureInfo.InvariantCulture); } }
+
+        private float PathFontSize { get { return 2.0f * Factor; } }
+
+        private float NarrowRoadFontSize { get { return 2.5f * Factor; } }
+
+        private float MediumWideRoadFontSize { get { return 3.0f * Factor; } }
+
+        private float WideRoadFontSize { get { return 3.0f * Factor; } }
+
+        private float RailFontSize { get { return 2.5f * Factor; } }
+
+        private float RiverFontSize { get { return 5.5f * Factor; } }
+
+        private float AreaFontSize { get { return 2.5f * Factor; } }
+
+        #endregion
+
+
+        #region Methods
+
+        private void Execute()
+        {
             // Init
             var extent = new Extent(197342, 4731653, 199677, 4733278);
 
@@ -66,47 +112,12 @@
 
             svgDoc.Write(@"C:\temp\render.svg");
 
+            // Done
+            progressBar.Value = 0;
+
             var url = @"file:///C:/temp/render.svg";
             Process.Start("chrome.exe", url);
         }
-
-        #endregion
-
-
-        #region Enum
-
-        private enum AreaType
-        {
-            Water,
-            Land,
-            Admin
-        }
-
-        #endregion
-
-
-        #region Properties
-
-        private static float Factor { get { return 0.65f; } }
-
-        private static float PathFontSize { get { return 2.0f * Factor; } }
-
-        private static float NarrowRoadFontSize { get { return 2.5f * Factor; } }
-
-        private static float MediumWideRoadFontSize { get { return 3.0f * Factor; } }
-
-        private static float WideRoadFontSize { get { return 3.0f * Factor; } }
-
-        private static float RailFontSize { get { return 2.5f * Factor; } }
-
-        private static float RiverFontSize { get { return 5.5f * Factor; } }
-
-        private static float AreaFontSize { get { return 2.5f * Factor; } }
-
-        #endregion
-
-
-        #region Methods
 
         private static Shapefile ReadShpFile(string path)
         {
@@ -147,10 +158,14 @@
             //svgDoc.Children.Add(new SvgRectangle { X = 0, Y = 0, Height = paperHeight, Width = paperWidth });
         }
 
-        private void DrawAreas(IEnumerable<IFeature> features, AreaType areaType)
+        private void DrawAreas(IList<IFeature> features, AreaType areaType)
         {
             // Iterate features
             var areaId = 0;
+
+            progressBar.Value = 0;
+            progressBar.Maximum = features.Count - 1;
+
             foreach (var feature in features)
             {
                 var type = feature.DataRow[3].ToString();
@@ -238,10 +253,12 @@
                 // Background color path
                 var bgPath = MakeSvgPath(feature);
                 bgPath.Fill = new SvgColourServer(Color.White);
-#if DEBUG
-                bgPath.Stroke = new SvgColourServer(Color.Red);
-                bgPath.StrokeWidth = new SvgUnit(SvgUnitType.Millimeter, 0.5f);
-#endif
+                
+                if (cbDebug.Checked)
+                {
+                    bgPath.Stroke = new SvgColourServer(Color.Red);
+                    bgPath.StrokeWidth = new SvgUnit(SvgUnitType.Millimeter, 0.5f);
+                }
 
                 // Add paths to document
                 svgDoc.Children.Add(bgPath);
@@ -296,13 +313,19 @@
                 txt.CustomAttributes.Add("clip-path", string.Format("url(#{0})", clipPath.ID));
 
                 svgDoc.Children.Add(txt);
+                
+                progressBar.Value++;
             }
         }
 
-        private void DrawRoads(IEnumerable<IFeature> features)
+        private void DrawRoads(IList<IFeature> features)
         {
             // Iterate features
             var pathId = 0;
+
+            progressBar.Value = 0;
+            progressBar.Maximum = features.Count - 1;
+
             foreach (var feature in features)
             {
                 var roadClass = feature.DataRow[11].ToString();
@@ -501,26 +524,33 @@
                     title = title.ToUpper();
                 }
 
-#if DEBUG
-                // Debug paths
-                var pathDebug = (SvgPath)path.Clone();
-                pathDebug.ID += "Debug";
-                pathDebug.Fill = SvgPaintServer.None;
-                pathDebug.Stroke = new SvgColourServer(Color.Red);
-                pathDebug.StrokeWidth = new SvgUnit(SvgUnitType.Millimeter, 0.5f);
-                svgDoc.Children.Add(pathDebug);
-#endif
+                if (cbDebug.Checked)
+                {
+                    // Debug paths
+                    var pathDebug = (SvgPath) path.Clone();
+                    pathDebug.ID += "Debug";
+                    pathDebug.Fill = SvgPaintServer.None;
+                    pathDebug.Stroke = new SvgColourServer(Color.Red);
+                    pathDebug.StrokeWidth = new SvgUnit(SvgUnitType.Millimeter, 0.5f);
+                    svgDoc.Children.Add(pathDebug);
+                }
 
                 var font = "Roboto Medium";
                 svgDoc.Children.Add(MakePathText(path.ID, feature, color, size, title, true, font, false, false));
                 svgDoc.Children.Add(MakePathText(path.ID, feature, color, size, title, false, font, false, false));
+
+                progressBar.Value++;
             }
         }
 
-        private void DrawWaterways(IEnumerable<IFeature> features)
+        private void DrawWaterways(IList<IFeature> features)
         {
             // Iterate features
             var pathId = 0;
+
+            progressBar.Value = 0;
+            progressBar.Maximum = features.Count - 1;
+
             foreach (var feature in features)
             {
                 string defText;
@@ -585,6 +615,8 @@
                 var font = "PT Serif";
                 svgDoc.Children.Add(MakePathText(path.ID, feature, color, size, title, true, font, true, true));
                 svgDoc.Children.Add(MakePathText(path.ID, feature, color, size, title, false, font, true, true));
+
+                progressBar.Value++;
             }
         }
 
@@ -748,7 +780,7 @@
 
         private Tuple<float, float> MeasureSvgText(string content, SvgUnit size, string font, bool bold, bool italic)
         {
-            var txt = new SvgText { Font = font, FontSize = new SvgUnit(SvgUnitType.Millimeter, size) };
+            var txt = new SvgText { Font = font, FontSize = size };
             var node = new SvgContentNode { Content = content };
             txt.Nodes.Add(node);
 
@@ -780,7 +812,12 @@
 
         #region Event handlers
 
-        private void SaveToSvg_Click(object sender, EventArgs e)
+        private void BtnRun_Click(object sender, EventArgs e)
+        {
+            Execute();
+        }
+
+        private void BtnSaveSvg_Click(object sender, EventArgs e)
         {
             saveFileDialog1.Filter = @"(SVG)|*.svg";
             if (saveFileDialog1.ShowDialog() == DialogResult.OK)
