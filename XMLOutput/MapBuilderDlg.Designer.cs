@@ -35,6 +35,7 @@
             this.btnRun = new System.Windows.Forms.Button();
             this.cbDebug = new System.Windows.Forms.CheckBox();
             this.progressBar = new System.Windows.Forms.ProgressBar();
+            this.lblStatus = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // btnSave
@@ -94,11 +95,22 @@
             this.progressBar.Size = new System.Drawing.Size(311, 23);
             this.progressBar.TabIndex = 9;
             // 
+            // lblStatus
+            // 
+            this.lblStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblStatus.AutoSize = true;
+            this.lblStatus.Location = new System.Drawing.Point(13, 371);
+            this.lblStatus.Name = "lblStatus";
+            this.lblStatus.Size = new System.Drawing.Size(77, 13);
+            this.lblStatus.TabIndex = 10;
+            this.lblStatus.Text = "Ready to run...";
+            // 
             // MapBuilderDlg
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(335, 455);
+            this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.progressBar);
             this.Controls.Add(this.cbDebug);
             this.Controls.Add(this.btnRun);
@@ -122,6 +134,7 @@
         private System.Windows.Forms.Button btnRun;
         private System.Windows.Forms.CheckBox cbDebug;
         private System.Windows.Forms.ProgressBar progressBar;
+        private System.Windows.Forms.Label lblStatus;
     }
 }
 

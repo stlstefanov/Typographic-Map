@@ -78,6 +78,9 @@
         private void Execute()
         {
             // Init
+            lblStatus.Text = "Reading shape files...";
+            lblStatus.Update();
+
             var extent = new Extent(197342, 4731653, 199677, 4733278);
 
             var roadsShp = ReadShpFile(@"..\..\..\Data\{0}.imposm-shapefiles\{0}_osm_roads.shp").Features.Where(ExtentsIntersect(extent)).OrderBy(f => f.DataRow[8]).ToList();
@@ -91,19 +94,44 @@
                 .Where(f => f != null)
                 .ToList();
 
+            lblStatus.Text = "Initializing document...";
+            lblStatus.Update();
+
             InitDocument(extent);
 
             // Draw
+            lblStatus.Text = "Drawing administrative boundaries...";
+            lblStatus.Update();
+
             DrawAreas(adminShp, AreaType.Admin);
+
+            lblStatus.Text = "Drawing area objects...";
+            lblStatus.Update();
+
             DrawAreas(landusagesShp, AreaType.Land);
+
+            lblStatus.Text = "Drawing waterways...";
+            lblStatus.Update();
+
             DrawWaterways(waterwaysShp);
+
+            lblStatus.Text = "Drawing water areas...";
+            lblStatus.Update();
+
             DrawAreas(waterareasShp, AreaType.Water);
+
+            lblStatus.Text = "Drawing roads...";
+            lblStatus.Update();
+
             DrawRoads(roadsShp);
 
             // Make .svg file & Render
             //var stream = new MemoryStream();
             //svgDoc.Write(stream);
             //textBox1.Text = Encoding.UTF8.GetString(stream.GetBuffer());
+
+            lblStatus.Text = "Saving svg file...";
+            lblStatus.Update();
 
             if (!Directory.Exists(@"C:\temp\"))
             {
@@ -113,6 +141,9 @@
             svgDoc.Write(@"C:\temp\render.svg");
 
             // Done
+            lblStatus.Text = "Done";
+            lblStatus.Update();
+
             progressBar.Value = 0;
 
             var url = @"file:///C:/temp/render.svg";
@@ -164,10 +195,12 @@
             var areaId = 0;
 
             progressBar.Value = 0;
-            progressBar.Maximum = features.Count - 1;
+            progressBar.Maximum = features.Count;
 
             foreach (var feature in features)
             {
+                progressBar.Value++;
+
                 var type = feature.DataRow[3].ToString();
                 var defaultTitle = type;
                 SvgColourServer fontColor = null;
@@ -313,8 +346,6 @@
                 txt.CustomAttributes.Add("clip-path", string.Format("url(#{0})", clipPath.ID));
 
                 svgDoc.Children.Add(txt);
-                
-                progressBar.Value++;
             }
         }
 
@@ -324,10 +355,12 @@
             var pathId = 0;
 
             progressBar.Value = 0;
-            progressBar.Maximum = features.Count - 1;
+            progressBar.Maximum = features.Count;
 
             foreach (var feature in features)
             {
+                progressBar.Value++;
+
                 var roadClass = feature.DataRow[11].ToString();
                 var roadType = feature.DataRow[2].ToString();
 
@@ -538,8 +571,6 @@
                 var font = "Roboto Medium";
                 svgDoc.Children.Add(MakePathText(path.ID, feature, color, size, title, true, font, false, false));
                 svgDoc.Children.Add(MakePathText(path.ID, feature, color, size, title, false, font, false, false));
-
-                progressBar.Value++;
             }
         }
 
@@ -549,10 +580,12 @@
             var pathId = 0;
 
             progressBar.Value = 0;
-            progressBar.Maximum = features.Count - 1;
+            progressBar.Maximum = features.Count;
 
             foreach (var feature in features)
             {
+                progressBar.Value++;
+
                 string defText;
 
                 SvgColourServer color;
@@ -615,8 +648,6 @@
                 var font = "PT Serif";
                 svgDoc.Children.Add(MakePathText(path.ID, feature, color, size, title, true, font, true, true));
                 svgDoc.Children.Add(MakePathText(path.ID, feature, color, size, title, false, font, true, true));
-
-                progressBar.Value++;
             }
         }
 
